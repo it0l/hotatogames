@@ -2,6 +2,7 @@ plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.plugin.compose")
     id("com.google.devtools.ksp")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -36,6 +37,13 @@ dependencies {
     implementation("androidx.room:room-runtime:2.8.5")
     implementation("androidx.room:room-ktx:2.8.5")
     ksp("androidx.room:room-compiler:2.8.5")
+
+    // Firebase: o BoM ("lista de materiais") escolhe versões compatíveis entre si,
+    // por isso as bibliotecas do Firebase abaixo não têm número de versão.
+    implementation(platform("com.google.firebase:firebase-bom:35.1.0"))
+    implementation("com.google.firebase:firebase-firestore")
+    // Permite usar .await() nas Tasks do Firebase dentro de corrotinas.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.11.0")
     debugImplementation("androidx.compose.ui:ui-tooling")
 }
 
