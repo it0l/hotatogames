@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1060055658752",
+    "project_id": "batataquente-85eeb",
+    "storage_bucket": "batataquente-85eeb.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1060055658752:android:306ee7eac6ca5679c03e5",
+        "android_client_info": {
+          "package_name": "com.example.batataquente"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB2aKh48JzqO9VLa9I4iiN35azmKXh1WOI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

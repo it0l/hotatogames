@@ -10,23 +10,14 @@ interface QuestaoDao {
 
     @Query("SELECT COUNT(*) FROM questoes")
     suspend fun contar(): Int
+
+    @Query("SELECT * FROM questoes WHERE firebaseId = :firebaseId LIMIT 1")
+    suspend fun buscarFirebase(firebaseId: String): QuestaoEntity?
+
+    @Query("SELECT * FROM questoes WHERE firebaseId IS NOT NULL")
+    suspend fun listarFirebase(): List<QuestaoEntity>
+
     @Insert suspend fun inserir(questao: QuestaoEntity): Long
     @Update suspend fun atualizar(questao: QuestaoEntity)
     @Delete suspend fun excluir(questao: QuestaoEntity)
-
-    @Query("SELECT * FROM questoes WHERE id = :id LIMIT 1")
-    suspend fun buscar(id: Int): QuestaoEntity?
-
-    @Query("DELETE FROM questoes")
-    suspend fun excluirTodas()
-
-    /**
-     * Usado na sincronização com o Firebase: troca todas as questões locais pelas da nuvem.
-     * @Transaction garante que as duas etapas acontecem juntas (ou nenhuma acontece).
-     */
-    @Transaction
-    suspend fun substituirTodas(questoes: List<QuestaoEntity>) {
-        excluirTodas()
-        questoes.forEach { inserir(it) }
-    }
 }

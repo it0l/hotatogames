@@ -11,9 +11,10 @@ import kotlin.random.Random
 class BaralhoQuestoes(
     questoesSalvas: List<QuestaoEntity>,
     private val dificuldade: String,
-    private val sorteio: Random = Random.Default
+    private val sorteio: Random = Random.Default,
+    jaApresentadas: Set<String> = emptySet()
 ) {
-    private val apresentadas = mutableSetOf<String>()
+    private val apresentadas = jaApresentadas.toMutableSet()
     private val pendentes = mutableListOf<QuestaoEntity>()
     private var idGerado = -1
 
@@ -23,6 +24,8 @@ class BaralhoQuestoes(
         pendentes.addAll(questoesSalvas.filter { it.dificuldade == dificuldade })
         completarBaralho()
     }
+
+    fun chavesUsadas(): Set<String> = apresentadas.toSet()
 
     fun proxima(): QuestaoEntity {
         while (true) {

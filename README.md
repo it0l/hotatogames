@@ -1,252 +1,117 @@
 # 🥔 Batata Quente Matemática
 
-**Um jogo de matemática, velocidade e estratégia para Android.**
+Jogo Android em **Kotlin e Jetpack Compose**, desenvolvido como trabalho final da disciplina de Android. De 2 a 6 pessoas jogam presencialmente no mesmo celular, resolvendo contas antes que a batata exploda.
 
-Batata Quente Matemática é um minijogo desenvolvido em **Kotlin** com **Jetpack Compose**, no qual os participantes precisam resolver operações matemáticas e passar a batata antes que o tempo acabe. O projeto foi criado como trabalho final da disciplina de Desenvolvimento Android, aplicando conceitos de **MVVM, Navigation, Room, CRUD, Flow e integração externa**.
+**Integrantes:** Lucas, Rafael e Pedro.
 
-**Equipe:** Lucas, Rafael e Pedro  
-**Plataforma:** Android  
-**Modo de jogo:** presencial, em um único dispositivo  
-**Estado do projeto:** versão local jogável; integração com Firebase ainda pendente
+## Como jogar
 
----
+1. Na tela inicial, escolha **Jogar**.
+2. Cadastre os jogadores e selecione de **2 a 6** participantes.
+3. Configure a dificuldade, o tempo por rodada (20–60 segundos) e as vidas (1–3).
+4. O jogador da vez responde à conta. Se acertar, recebe um acerto e passa a batata; se errar, continua com ela.
+5. Quando o tempo acabar, quem estiver com a batata perde uma vida.
+6. A partida termina quando restar um jogador com vidas. Cada acerto vale 10 pontos no ranking.
 
-## 🎮 Como funciona o jogo
+As operações incluem soma, subtração, multiplicação e divisão exata. O sorteio mistura questões cadastradas com questões geradas e **não repete a mesma operação na partida** (por exemplo, `7 × 8` e `8 × 7` são equivalentes).
 
-1. Na tela inicial, selecione **Jogar**.
-2. Cadastre os participantes e selecione de **2 a 6 jogadores**.
-3. Configure a dificuldade (**Fácil, Médio ou Difícil**), o tempo de cada rodada (**20 a 60 segundos**) e a quantidade de vidas (**1 a 3**).
-4. Ao começar, o jogador da vez recebe uma operação matemática.
-5. **Acertou:** ganha um acerto e passa a batata para o próximo participante ativo. Uma nova pergunta é exibida.
-6. **Errou:** permanece com a batata e precisa tentar novamente. O tempo continua correndo.
-7. Quando o cronômetro chega a zero, quem estiver com a batata **perde uma vida**.
-8. Novas rodadas acontecem até restar apenas **um vencedor**.
-9. Ao concluir a partida, os resultados são registrados no ranking local.
-
-**Pontuação:** cada resposta correta vale **10 pontos** na classificação acumulada. O ranking também registra partidas disputadas e vitórias.
-
-### Perguntas sem repetição
-
-O jogo combina questões cadastradas localmente com operações geradas automaticamente. O sistema mantém o histórico das questões apresentadas durante a partida para evitar repetições, incluindo operações equivalentes de adição e multiplicação (por exemplo, `7 × 8` e `8 × 7`). Em uma nova partida, o histórico é reiniciado.
-
----
-
-## 📱 Telas do aplicativo
+## Telas
 
 | Tela | Função |
-| --- | --- |
-| **Início** | Escolher entre o modo Jogador e o modo Administrador. |
-| **Jogadores** | Cadastrar, selecionar, editar e excluir participantes. |
-| **Configurações** | Definir dificuldade, duração da rodada e número de vidas. |
-| **Jogo** | Mostrar a conta, receber respostas, controlar a batata e exibir o tempo e as vidas. |
-| **Resultado** | Apresentar o vencedor, o número de rodadas e a pontuação da partida. |
-| **Ranking** | Exibir os pontos, as vitórias e as partidas registradas. |
-| **Login Admin** | Acessar a área administrativa em modo de demonstração. |
-| **Painel Admin** | Cadastrar, consultar, editar, excluir e filtrar questões matemáticas locais. |
+|---|---|
+| Inicial | Escolher jogar ou administrar |
+| Jogadores | Cadastrar, selecionar, editar e excluir participantes |
+| Configurações | Dificuldade, tempo e vidas |
+| Jogo | Questão, resposta, cronômetro, batata e vidas |
+| Resultado | Vencedor, rodadas e pontos |
+| Ranking | Pontos, vitórias e partidas salvos localmente |
+| Login Admin | Login de demonstração ou login Firebase |
+| Painel Admin | CRUD de questões e sincronização com Firebase |
 
-As telas principais do jogador utilizam **Bottom Navigation** para acessar Jogadores, Configurações e Ranking. Durante o jogo, a navegação inferior não é exibida.
+Há uma **Bottom Navigation Bar** para Jogadores, Configurações e Ranking. As listagens usam `LazyColumn`; as demais telas usam `Column` com `verticalScroll` para permitir rolagem no modo retrato e paisagem.
 
----
+## Tecnologias e arquitetura
 
-## 🛠️ Tecnologias utilizadas
+- Kotlin + Jetpack Compose / Material 3
+- Navigation Compose
+- **MVVM:** `UiState` / `StateFlow`, três ViewModels e três ViewModelFactories
+- **Room:** duas entidades, dois DAOs e CRUD completo
+- `Flow<List<...>>` para listas atualizadas automaticamente
+- Filtros e ordenação com `filter`, `map` e `sortedByDescending`
+- **Firebase Authentication + Firestore** para questões remotas
+- `try-catch` nos Repositories para falhas de banco e de integração externa
 
-| Tecnologia | Aplicação no projeto |
-| --- | --- |
-| **Kotlin** | Linguagem de programação e regras da partida. |
-| **Jetpack Compose / Material 3** | Construção das telas e dos componentes visuais. |
-| **Navigation Compose** | Navegação entre as oito telas. |
-| **MVVM** | Separação entre interface, estado e lógica de negócio. |
-| **ViewModel e StateFlow** | Gerenciamento e atualização dos estados das telas. |
-| **ViewModelFactory** | Criação dos ViewModels com suas dependências. |
-| **Room e DAO** | Banco de dados local e operações CRUD. |
-| **Kotlin Flow** | Observação reativa das listas armazenadas no Room. |
-| **Coroutines** | Execução de operações de dados e do cronômetro sem bloquear a interface. |
-
-**Firebase Firestore** foi escolhido para a etapa de integração externa, **mas ainda não está implementado nesta versão**. Atualmente, o gerenciamento de questões acontece no Room e o jogo é local.
-
----
-
-## 🧩 Arquitetura MVVM
-
-A organização do aplicativo separa as responsabilidades em quatro áreas principais:
-
-- **`ui/`**: telas Compose, estados e ViewModels.
-- **`data/local/`**: entidades, DAOs e configuração do banco Room.
-- **`data/repository/`**: acesso aos dados e tratamento de falhas nas operações.
-- **`logic/`**: regras do jogo, passagem da batata e geração das questões.
-
-Fluxo simplificado:
-
-```text
-Tela (Jetpack Compose)
-       ↓ ações
-ViewModel + UiState (StateFlow)
-       ↓ solicitações
-Repository
-       ↓
-Room / DAO
-       ↓ Flow
-ViewModel → atualização da tela
-```
-
-A lógica da partida também utiliza `RegrasJogo` e `BaralhoQuestoes`, mantendo as regras matemáticas separadas da interface.
-
-### ViewModels
-
-| ViewModel | Responsabilidade |
-| --- | --- |
-| `JogoViewModel` | Cronômetro, questões, respostas, acertos, vidas, rodadas e vencedor. |
-| `JogadoresViewModel` | Cadastro, seleção de participantes e ranking. |
-| `AdminViewModel` | Acesso administrativo de demonstração e gerenciamento de questões. |
-
-Cada ViewModel possui seu próprio **State** e uma **ViewModelFactory**. Nesta versão, as classes de estado e as factories ficam nos respectivos arquivos de ViewModel.
-
----
-
-## 🗂️ Estrutura de pastas
+Estrutura principal:
 
 ```text
 app/src/main/java/com/example/batataquente/
 ├── MainActivity.kt
-├── navigation/
-│   └── AppNavigation.kt
-├── logic/
-│   ├── BaralhoQuestoes.kt
-│   └── RegrasJogo.kt
+├── navigation/AppNavigation.kt
+├── ui/
+│   ├── telas/          (8 telas Compose + Moldura)
+│   ├── jogo/           (JogoViewModel, JogoState e Factory)
+│   ├── jogadores/      (JogadoresViewModel, JogadoresState e Factory)
+│   └── admin/          (AdminViewModel, AdminState e Factory)
 ├── data/
-│   ├── local/
-│   │   ├── AppDatabase.kt
-│   │   ├── JogadorEntity.kt
-│   │   ├── JogadorDao.kt
-│   │   ├── QuestaoEntity.kt
-│   │   └── QuestaoDao.kt
-│   └── repository/
-│       ├── JogadorRepository.kt
-│       └── QuestaoRepository.kt
-└── ui/
-    ├── jogo/
-    │   └── JogoViewModel.kt
-    ├── jogadores/
-    │   └── JogadoresViewModel.kt
-    ├── admin/
-    │   └── AdminViewModel.kt
-    └── telas/
-        ├── Moldura.kt
-        ├── TelaInicial.kt
-        ├── TelaJogadores.kt
-        ├── TelaConfiguracoes.kt
-        ├── TelaJogo.kt
-        ├── TelaResultado.kt
-        ├── TelaRanking.kt
-        ├── TelaLoginAdmin.kt
-        └── TelaAdmin.kt
+│   ├── local/          (AppDatabase, Jogador/Questao Entity e DAO)
+│   ├── repository/     (JogadorRepository e QuestaoRepository)
+│   └── remote/         (FirebaseQuestaoDataSource)
+└── logic/              (RegrasJogo e BaralhoQuestoes)
 ```
 
----
+Fluxo: **Tela → ViewModel → Repository → DAO/Room ou Firebase → UiState → Tela**.
 
-## 💾 Persistência com Room e CRUD
+### Banco e CRUD
 
-O banco de dados local contém duas entidades:
+O Room utiliza `JogadorEntity` (`nome`, `pontos`, `vitorias`, `partidas`) e `QuestaoEntity` (`pergunta`, `resposta`, `dificuldade`, `origem`, `firebaseId`). Ambas possuem métodos de criar, consultar, atualizar e excluir. As consultas de listas são expostas por `Flow`.
 
-**`JogadorEntity` — tabela `jogadores`**
+A migração da versão 1 para a versão 2 do Room adiciona o campo `firebaseId` sem apagar o banco anterior.
 
-| Campo | Função |
-| --- | --- |
-| `id` | Identificador do jogador. |
-| `nome` | Nome do participante. |
-| `pontos` | Pontos acumulados. |
-| `vitorias` | Quantidade de vitórias. |
-| `partidas` | Quantidade de partidas concluídas. |
+## Rotação, rolagem e persistência
 
-**`QuestaoEntity` — tabela `questoes`**
+- **Rolagem:** `Moldura.kt` utiliza `verticalScroll` para formulários e `LazyColumn` para listas. O teclado é considerado com `imePadding()`.
+- **Girar a tela:** `JogoViewModel` mantém o cronômetro, a questão atual, o jogador e as vidas durante a mudança de orientação. A seleção de jogadores também permanece no `JogadoresViewModel`.
+- **Campos de texto e configurações:** usam `rememberSaveable` para restaurar os valores ao girar a tela.
+- **Dados permanentes:** Room armazena os jogadores, questões locais e pontuações, inclusive após fechar e abrir o aplicativo.
 
-| Campo | Função |
-| --- | --- |
-| `id` | Identificador da questão. |
-| `pergunta` | Expressão matemática exibida. |
-| `resposta` | Resultado numérico correto. |
-| `dificuldade` | Fácil, Médio ou Difícil. |
-| `origem` | Identificação da origem da questão. |
+**Limite intencional:** a partida em andamento é mantida durante rotação, mas não é prometida recuperação caso o Android encerre completamente o processo do aplicativo. Isso evita serialização manual de JSON e mantém o código no padrão MVVM aprendido em aula.
 
-Os DAOs implementam o **CRUD completo** nas duas tabelas:
+## Firebase
 
-- **Create:** cadastrar jogadores e questões.
-- **Read:** consultar listas reativas usando `Flow<List<...>>`.
-- **Update:** editar jogadores/questões e atualizar estatísticas dos jogadores.
-- **Delete:** excluir jogadores e questões.
+O projeto já contém o código da integração, mas **Firestore, Authentication, regras e usuário administrador devem ser configurados no Firebase Console**, e a conexão real ainda precisa ser testada no Android Studio.
 
-Os ViewModels coletam os dados observados e atualizam as telas. A classificação utiliza filtros e ordenação em Kotlin (`filter` e `sortedByDescending`); o painel administrativo também permite filtrar questões por dificuldade.
+1. No [Firebase Console](https://console.firebase.google.com/), abra o projeto `batataquente-85eeb`.
+2. Em **Authentication**, ative o provedor **E-mail/senha** e crie uma conta de administrador.
+3. Em **Firestore Database**, crie o banco, se ainda não existir.
+4. Crie uma coleção `admins` e um documento cujo ID seja o **UID** do usuário autorizado.
+5. Publique as regras presentes em [`firestore.rules`](firestore.rules). Elas permitem leitura de questões e exigem um administrador autorizado para escrita.
+6. Baixe o **`google-services.json` original** do console e substitua o arquivo em `app/google-services.json` (a versão do pacote foi digitada a partir de uma imagem).
+7. Abra o aplicativo, entre em Administrador com a conta Firebase e teste salvar uma questão e sincronizá-la.
 
----
+**Modo local:** o login de demonstração (`1234`) modifica somente as questões do Room. Não concede acesso de escrita ao Firebase. Quando estiver sem internet, o jogo continua usando o Room e a geração local de questões.
 
-## ▶️ Como executar
+## Abrir e executar
 
-### Requisitos
+1. Abra a pasta `BatataQuenteMatematica` no Android Studio.
+2. Mantenha a configuração de JDK compatível com Gradle 9.1 (o projeto usa JDK 25 no Android Studio e compila o aplicativo para Java 17).
+3. Confirme o Gradle Wrapper completo: `gradlew`, `gradlew.bat` e `gradle/wrapper/gradle-wrapper.jar`. Caso faltem, preserve-os de uma cópia funcional do projeto Android Studio.
+4. Substitua `app/google-services.json` pelo arquivo original do Firebase Console.
+5. Faça **Sync Project with Gradle Files → Build → Run** em emulador ou celular Android (API 26 ou superior).
 
-- **Android Studio** com Android SDK instalado.
-- **Android SDK 36** para compilar o projeto (`compileSdk = 36`).
-- **Emulador ou dispositivo com Android 8.0 / API 26 ou superior**.
-- Projeto configurado com **Gradle 9.1.0**, **Android Gradle Plugin 9.0.1** e **Gradle JDK 25**.
+## Testes e entrega
 
-### Passo a passo
+Confira `COMO_USAR_O_ZIP.md` para atualizar a cópia do GitHub e `TESTES_MANUAIS.md` para testar cadastro, CRUD, jogo, contas não repetidas, rolagem, rotação e Firebase. O projeto deve ser enviado **com todos os arquivos necessários para execução** em um repositório GitHub.
 
-1. Clone o repositório ou baixe os arquivos do projeto.
-2. Abra a pasta raiz do projeto no **Android Studio**.
-3. Em **Settings → Build, Execution, Deployment → Build Tools → Gradle**, selecione o JDK compatível (a configuração utilizada no desenvolvimento foi o **JDK 25**).
-4. Aguarde o **Gradle Sync** e a instalação das dependências necessárias.
-5. Selecione o módulo **`app`** e um emulador ou celular.
-6. Clique em **Run ▶** para iniciar o aplicativo.
+**Imagens e vídeo de demonstração:** ainda serão adicionados antes da entrega, conforme as instruções do professor. O trabalho também exige defesa individual e participação dos integrantes nos commits.
 
-> **Atenção ao Gradle Wrapper:** para que um clone seja executável sem ajustes manuais, o repositório também deve conter os arquivos `gradlew`, `gradlew.bat` e `gradle/wrapper/gradle-wrapper.jar`, além de `gradle-wrapper.properties`. Esses arquivos devem ser mantidos no GitHub a partir do projeto Android Studio utilizado pela equipe.
+Confira também `VERIFICACAO_DESTA_VERSAO.md` para ver o que foi efetivamente verificado.
 
-### Teste rápido
+Consulte `GUIA_DEFESA.md` para uma explicação simples do código que cada integrante deve entender.
 
-1. Cadastre três jogadores na tela **Jogadores** e selecione os três.
-2. Configure **Fácil**, **20 segundos** e **1 vida**.
-3. Inicie a partida e responda às contas até o cronômetro zerar.
-4. Continue as rodadas até que apareça o vencedor.
-5. Abra **Ranking** e confira o registro da partida.
-6. Volte ao início, abra **Administrador** e teste o cadastro, edição e exclusão de questões.
+## Organização da apresentação
 
-A senha do **modo administrador de demonstração** é `1234`. Essa autenticação é apenas didática, não representa um sistema seguro de login.
+- **Lucas:** jogo, regras, cronômetro, perguntas e navegação.
+- **Rafael:** entidades, DAOs, Room, CRUD, Flow e ranking.
+- **Pedro:** tela administrativa, questões, Repository e Firebase.
 
----
-
-## 👥 Integrantes e divisão de responsabilidades
-
-| Integrante | Área de responsabilidade | Principais componentes |
-| --- | --- | --- |
-| **Lucas** | Jogo, lógica das rodadas e navegação. | `JogoViewModel`, `RegrasJogo`, `BaralhoQuestoes`, `AppNavigation` e telas de início, jogo e resultado. |
-| **Rafael** | Banco local, cadastro e classificação. | `AppDatabase`, entidades, DAOs, `JogadorRepository`, `JogadoresViewModel` e telas de jogadores, configurações e ranking. |
-| **Pedro** | Administração e questões matemáticas. | `AdminViewModel`, `QuestaoRepository`, telas administrativas e futura integração com Firebase. |
-
-A tabela registra **responsabilidades previstas para o grupo**. As contribuições individuais devem ser comprovadas pelas alterações realizadas e pelos commits de cada integrante no histórico do repositório.
-
----
-
-## 📌 Situação atual e próximos passos
-
-**Implementado na versão local:**
-
-- [x] Oito telas e navegação entre os fluxos do jogador e do administrador.
-- [x] Mecânica de batata quente, cronômetro, vidas e resultado.
-- [x] Questões matemáticas com controle de repetição por partida.
-- [x] Três ViewModels com estados e factories.
-- [x] Duas entidades no Room e operações CRUD locais.
-- [x] Listas reativas, filtros, ordenação e ranking local.
-- [x] Controle de acesso administrativo de demonstração.
-
-**Pendente para a entrega acadêmica:**
-
-- [ ] Integrar e testar o **Firebase Firestore** como serviço externo.
-- [ ] Revisar os testes finais de persistência, navegação e fluxo completo em dispositivo.
-- [ ] Registrar e revisar as contribuições individuais dos três integrantes.
-- [ ] Adicionar capturas de tela e um vídeo curto da aplicação funcionando.
-
----
-
-## 🎓 Objetivo acadêmico
-
-Demonstrar, em um aplicativo Android jogável, o uso de interfaces declarativas com Compose, navegação entre telas, organização MVVM, estado reativo, persistência local com Room, operações CRUD, lógica de negócio em Kotlin e integração com uma fonte de dados externa.
-
-Este repositório corresponde ao projeto **Batata Quente Matemática**, desenvolvido por **Lucas, Rafael e Pedro** para a disciplina de Desenvolvimento Android.
+Essa divisão identifica os assuntos de estudo e demonstração, não atribui a autoria de código ou commits a alguém que não tenha contribuído.

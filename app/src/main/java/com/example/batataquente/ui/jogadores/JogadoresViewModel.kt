@@ -22,32 +22,49 @@ class JogadoresViewModel(private val repository: JogadorRepository) : ViewModel(
 
     init {
         viewModelScope.launch {
-            repository.observar().collect { lista ->
-                _state.update { it.copy(jogadores = lista, selecionados = it.selecionados.intersect(lista.map { j -> j.id }.toSet())) }
+            try {
+                repository.observar().collect { lista ->
+                    val validos = lista.map { it.id }.toSet()
+                    _state.update {
+                        it.copy(jogadores = lista, selecionados = it.selecionados.intersect(validos))
+                    }
+                }
+            } catch (e: Exception) {
+                _state.update { it.copy(erro = "Erro ao consultar jogadores: ${e.message}") }
             }
         }
     }
 
-    fun salvar(nome: String, original: JogadorEntity? = null) = viewModelScope.launch {
-        val resultado = repository.salvar(original?.copy(nome = nome.trim()) ?: JogadorEntity(nome = nome.trim()))
-        _state.update { it.copy(erro = resultado.exceptionOrNull()?.message) }
-    }
-    fun excluir(jogador: JogadorEntity) = viewModelScope.launch {
-        val resultado = repository.excluir(jogador)
-        _state.update { it.copy(erro = resultado.exceptionOrNull()?.message) }
-    }
-    fun selecionar(id: Int) {
-        _state.update { s ->
-            s.copy(selecionados = if (id in s.selecionados) s.selecionados - id else s.selecionados + id)
+    fun salvar(nome: String, original: JogadorEntity? = null) {
+        viewModelScope.launch {
+            val jogador = original?.copy(nome = nome.trim()) ?: JogadorEntity(nome = nome.trim())
+            val resultado = repository.salvar(jogador)
+            _state.update { it.copy(erro = resultado.exceptionOrNull()?.message) }
         }
     }
-    val ranking: List<JogadorEntity>
-        get() = _state.value.jogadores.filter { it.partidas > 0 }.sortedByDescending { it.pontos }
 
-    fun limparErro() { _state.update { it.copy(erro = null) } }
+    fun excluir(jogador: JogadorEntity) {
+        viewModelScope.launch {
+            val resultado = repository.excluir(jogador)
+            _state.update { it.copy(erro = resultado.exceptionOrNull()?.message) }
+        }
+    }
+
+    fun selecionar(id: Int) {
+        _state.update {
+            val selecionados = if (id in it.selecionados) it.selecionados - id else it.selecionados + id
+            if (selecionados.size <= 6) it.copy(selecionados = selecionados) else it
+        }
+    }
+
+    val ranking: List<JogadorEntity>
+        get() = _state.value.jogadores.filter { it.partidas > 0 }
+            .sortedByDescending { it.pontos }
 }
 
 class JogadoresViewModelFactory(private val repository: JogadorRepository) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
-    override fun <T : ViewModel> create(modelClass: Class<T>): T = JogadoresViewModel(repository) as T
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        return JogadoresViewModel(repository) as T
+    }
 }
