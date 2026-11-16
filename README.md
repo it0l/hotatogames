@@ -98,15 +98,26 @@ O projeto já contém o código da integração, mas **Firestore, Authentication
 4. Substitua `app/google-services.json` pelo arquivo original do Firebase Console.
 5. Faça **Sync Project with Gradle Files → Build → Run** em emulador ou celular Android (API 26 ou superior).
 
-## Testes e entrega
 
-Confira `COMO_USAR_O_ZIP.md` para atualizar a cópia do GitHub e `TESTES_MANUAIS.md` para testar cadastro, CRUD, jogo, contas não repetidas, rolagem, rotação e Firebase. O projeto deve ser enviado **com todos os arquivos necessários para execução** em um repositório GitHub.
 
-**Imagens e vídeo de demonstração:** ainda serão adicionados antes da entrega, conforme as instruções do professor. O trabalho também exige defesa individual e participação dos integrantes nos commits.
+## Demonstração do aplicativo
 
-Confira também `VERIFICACAO_DESTA_VERSAO.md` para ver o que foi efetivamente verificado.
+https://youtu.be/NAD34b-rvPk
 
-Consulte `GUIA_DEFESA.md` para uma explicação simples do código que cada integrante deve entender.
+## Imagens das telas
+
+As capturas de tela do aplicativo estão disponíveis na pasta `DOCS/TELAS`, localizada na raiz do projeto.
+
+Para acessá-las, abra a pasta `DOCS` e depois a pasta `TELAS`.
+
+
+hotatogames/
+├── DOCS/
+│   └── TELAS/
+│       ├── tela_inicial.png
+│       ├── tela_jogo.png
+│       └── tela_ranking.png
+└── README.md
 
 ## Organização da apresentação
 
