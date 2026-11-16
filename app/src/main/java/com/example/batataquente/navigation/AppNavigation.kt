@@ -8,10 +8,16 @@ import androidx.navigation.compose.*
 import com.example.batataquente.ui.jogadores.JogadoresViewModel
 import com.example.batataquente.ui.jogo.JogoViewModel
 import com.example.batataquente.ui.admin.AdminViewModel
+import com.example.batataquente.ui.ranking.RankingViewModel
 import com.example.batataquente.ui.telas.*
 
 @Composable
-fun AppNavigation(jogadoresVm: JogadoresViewModel, jogoVm: JogoViewModel, adminVm: AdminViewModel) {
+fun AppNavigation(
+    jogadoresVm: JogadoresViewModel,
+    jogoVm: JogoViewModel,
+    adminVm: AdminViewModel,
+    rankingVm: RankingViewModel
+) {
     val nav = rememberNavController()
     val entrada by nav.currentBackStackEntryAsState()
     val rota = entrada?.destination?.route ?: "inicio"
@@ -51,7 +57,7 @@ fun AppNavigation(jogadoresVm: JogadoresViewModel, jogoVm: JogoViewModel, adminV
                         jogoVm.sair(); nav.navigate("jogadores")
                     })
                 }
-                composable("ranking") { TelaRanking(jogadoresVm) }
+                composable("ranking") { TelaRanking(jogadoresVm, rankingVm) }
                 composable("login") {
                     TelaLoginAdmin(adminVm, entrar = { nav.navigate("admin") }, voltar = { nav.popBackStack() })
                 }

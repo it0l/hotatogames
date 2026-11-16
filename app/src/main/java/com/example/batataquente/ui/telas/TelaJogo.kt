@@ -52,7 +52,7 @@ fun TelaJogo(vm: JogoViewModel, verResultado: () -> Unit) {
                 s.mensagem?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
                 Text("Vidas", fontWeight = FontWeight.Bold)
                 s.jogadores.forEach { j ->
-                    Text("${j.nome}: ${"❤️".repeat(j.vidas)} (${j.acertos} acertos)")
+                    Text("${j.nome}: ${"❤️".repeat(j.vidas)} • ${j.pontos} pts" + if (j.combo >= 3) " 🔥x${j.combo}" else "")
                 }
             }
             "explosao" -> {

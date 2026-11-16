@@ -11,7 +11,7 @@ Jogo Android em **Kotlin e Jetpack Compose**, desenvolvido como trabalho final d
 3. Configure a dificuldade, o tempo por rodada (20–60 segundos) e as vidas (1–3).
 4. O jogador da vez responde à conta. Se acertar, recebe um acerto e passa a batata; se errar, continua com ela.
 5. Quando o tempo acabar, quem estiver com a batata perde uma vida.
-6. A partida termina quando restar um jogador com vidas. Cada acerto vale 10 pontos no ranking.
+6. A partida termina quando restar um jogador com vidas. A pontuação é estilo fliperama: cada acerto vale 100/200/300 pontos (Fácil/Médio/Difícil), responder em até 3 s dobra o valor, 3 acertos seguidos dão combo x2 e 5 seguidos dão x3. O vencedor ganha +500 e +100 por vida restante. As partidas vão para o ranking online no Firebase (login anônimo, sem cadastro: o jogador é identificado pelo nome).
 
 As operações incluem soma, subtração, multiplicação e divisão exata. O sorteio mistura questões cadastradas com questões geradas e **não repete a mesma operação na partida** (por exemplo, `7 × 8` e `8 × 7` são equivalentes).
 

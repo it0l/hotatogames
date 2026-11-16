@@ -7,8 +7,12 @@ import com.example.batataquente.data.local.JogadorEntity
 import com.example.batataquente.data.local.QuestaoEntity
 import com.example.batataquente.data.repository.JogadorRepository
 import com.example.batataquente.data.repository.QuestaoRepository
+import com.example.batataquente.data.repository.RankingRepository
+import com.example.batataquente.data.remote.PartidaRemota
+import com.example.batataquente.data.remote.ResultadoJogador
 import com.example.batataquente.logic.BaralhoQuestoes
 import com.example.batataquente.logic.Participante
+import com.example.batataquente.logic.Pontuacao
 import com.example.batataquente.logic.RegrasJogo
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -28,12 +32,15 @@ data class JogoState(
     val rodada: Int = 1,
     val fase: String = "aguardando",
     val mensagem: String? = null,
-    val vencedor: Participante? = null
+    val vencedor: Participante? = null,
+    /** Situação do envio da partida para o ranking online (Firebase). */
+    val envioOnline: String? = null
 )
 
 class JogoViewModel(
     private val questaoRepository: QuestaoRepository,
-    private val jogadorRepository: JogadorRepository
+    private val jogadorRepository: JogadorRepository,
+    private val rankingRepository: RankingRepository
 ) : ViewModel() {
     private val _state = MutableStateFlow(JogoState())
     val state: StateFlow<JogoState> = _state
@@ -41,6 +48,7 @@ class JogoViewModel(
     private var relogio: Job? = null
     private var baralho: BaralhoQuestoes? = null
     private var prazoEmMillis = 0L
+    private var questaoMostradaEm = 0L
 
     fun iniciar(jogadores: List<JogadorEntity>, dificuldade: String, segundos: Int, vidas: Int) {
         if (jogadores.size !in 2..6) {
@@ -54,6 +62,7 @@ class JogoViewModel(
                 val questoes = questaoRepository.observar().first()
                 baralho = BaralhoQuestoes(questoes, dificuldade)
                 prazoEmMillis = System.currentTimeMillis() + segundos * 1000L
+                questaoMostradaEm = System.currentTimeMillis()
                 _state.value = JogoState(
                     jogadores = jogadores.map { Participante(it.id, it.nome, vidas) },
                     questao = proximaQuestao(),
@@ -86,21 +95,29 @@ class JogoViewModel(
             _state.update { it.copy(mensagem = "Digite um número.") }
             return false
         }
+        val jogadores = atual.jogadores.toMutableList()
+        val posicao = atual.jogadorAtual
         if (numero != atual.questao.resposta) {
-            _state.update { it.copy(mensagem = "Resposta incorreta! Continue com a batata.") }
+            jogadores[posicao] = jogadores[posicao].copy(combo = 0)
+            _state.update { it.copy(jogadores = jogadores, mensagem = "Resposta incorreta! Combo perdido, continue com a batata.") }
             return false
         }
 
-        val jogadores = atual.jogadores.toMutableList()
-        val posicao = atual.jogadorAtual
-        jogadores[posicao] = jogadores[posicao].copy(acertos = jogadores[posicao].acertos + 1)
+        val agora = System.currentTimeMillis()
+        val jogador = jogadores[posicao]
+        val combo = jogador.combo + 1
+        val ganhou = Pontuacao.acerto(atual.dificuldade, agora - questaoMostradaEm, combo)
+        jogadores[posicao] = jogador.copy(acertos = jogador.acertos + 1, pontos = jogador.pontos + ganhou, combo = combo)
         val proxima = proximaQuestao()
+        questaoMostradaEm = agora
+        val multiplicador = Pontuacao.multiplicador(combo)
+        val textoCombo = if (multiplicador > 1) " COMBO x$multiplicador!" else ""
         _state.update {
             it.copy(
                 jogadores = jogadores,
                 jogadorAtual = RegrasJogo.proximoAtivo(jogadores, posicao),
                 questao = proxima,
-                mensagem = "Correto! Passe a batata para o próximo jogador."
+                mensagem = "Correto! +$ganhou pontos.$textoCombo Passe a batata."
             )
         }
         return true
@@ -127,25 +144,51 @@ class JogoViewModel(
         if (atual.fase != "jogando") return
         val jogadores = atual.jogadores.toMutableList()
         val punido = jogadores[atual.jogadorAtual]
-        jogadores[atual.jogadorAtual] = punido.copy(vidas = (punido.vidas - 1).coerceAtLeast(0))
-        val vencedor = RegrasJogo.vencedor(jogadores)
+        jogadores[atual.jogadorAtual] = punido.copy(vidas = (punido.vidas - 1).coerceAtLeast(0), combo = 0)
+        val vencedor = RegrasJogo.vencedor(jogadores)?.let { sobrevivente ->
+            val premiado = sobrevivente.copy(pontos = sobrevivente.pontos + Pontuacao.bonusFinal(sobrevivente.vidas))
+            jogadores[jogadores.indexOf(sobrevivente)] = premiado
+            premiado
+        }
         _state.update {
             it.copy(
                 jogadores = jogadores,
                 tempoRestante = 0,
                 fase = if (vencedor == null) "explosao" else "fim",
                 vencedor = vencedor,
+                envioOnline = if (vencedor != null) "Enviando para o ranking online..." else null,
                 mensagem = if (vencedor == null) "A batata explodiu com ${punido.nome}!" else "${vencedor.nome} venceu!"
             )
         }
-        if (vencedor != null) {
-            viewModelScope.launch {
-                val pontos = jogadores.associate { it.id to it.acertos * 10 }
-                val resultado = jogadorRepository.registrarResultado(jogadores.map { it.id }, vencedor.id, pontos)
-                if (resultado.isFailure) {
-                    _state.update { it.copy(mensagem = "Erro ao salvar ranking: ${resultado.exceptionOrNull()?.message}") }
-                }
+        if (vencedor != null) salvarPartida(jogadores, vencedor, atual)
+    }
+
+    private fun salvarPartida(jogadores: List<Participante>, vencedor: Participante, atual: JogoState) {
+        viewModelScope.launch {
+            val pontos = jogadores.associate { it.id to it.pontos }
+            val resultado = jogadorRepository.registrarResultado(jogadores.map { it.id }, vencedor.id, pontos)
+            if (resultado.isFailure) {
+                _state.update { it.copy(mensagem = "Erro ao salvar ranking: ${resultado.exceptionOrNull()?.message}") }
             }
+        }
+        viewModelScope.launch {
+            val partida = PartidaRemota(
+                dificuldade = atual.dificuldade,
+                duracao = atual.duracao,
+                rodadas = atual.rodada,
+                jogadores = jogadores.map {
+                    ResultadoJogador(it.nome, it.pontos, it.acertos, it.vidas, venceu = it.id == vencedor.id)
+                }
+            )
+            val envio = rankingRepository.registrarPartida(partida)
+            val texto = envio.fold(
+                onSuccess = { confirmado ->
+                    if (confirmado) "Partida enviada para o ranking online! 🕹️"
+                    else "Sem internet: a partida será enviada quando a conexão voltar."
+                },
+                onFailure = { "Não foi possível enviar ao ranking online: ${it.message}" }
+            )
+            _state.update { it.copy(envioOnline = texto) }
         }
     }
 
@@ -153,6 +196,7 @@ class JogoViewModel(
         val atual = _state.value
         if (atual.fase != "explosao" || baralho == null) return
         prazoEmMillis = System.currentTimeMillis() + atual.duracao * 1000L
+        questaoMostradaEm = System.currentTimeMillis()
         val proxima = proximaQuestao()
         _state.update {
             it.copy(
@@ -177,10 +221,11 @@ class JogoViewModel(
 
 class JogoViewModelFactory(
     private val questaoRepository: QuestaoRepository,
-    private val jogadorRepository: JogadorRepository
+    private val jogadorRepository: JogadorRepository,
+    private val rankingRepository: RankingRepository
 ) : ViewModelProvider.Factory {
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        return JogoViewModel(questaoRepository, jogadorRepository) as T
+        return JogoViewModel(questaoRepository, jogadorRepository, rankingRepository) as T
     }
 }

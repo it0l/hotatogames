@@ -14,12 +14,13 @@ data class QuestaoRemota(
 )
 
 class FirebaseQuestaoDataSource(
-    private val firestore: FirebaseFirestore = FirebaseFirestore.getInstance(),
+    private val firestore: FirebaseFirestore = FirebaseConfig.firestore,
     private val auth: FirebaseAuth = FirebaseAuth.getInstance()
 ) {
     private val colecao get() = firestore.collection("questoes")
 
-    fun conectado(): Boolean = auth.currentUser != null
+    // O login anônimo dos jogadores (ranking online) não conta como administrador.
+    fun conectado(): Boolean = auth.currentUser?.isAnonymous == false
 
     suspend fun autenticar(email: String, senha: String) {
         require(email.isNotBlank() && senha.isNotBlank()) { "Informe e-mail e senha do Firebase." }

@@ -15,9 +15,10 @@ fun TelaResultado(vm: JogoViewModel, verRanking: () -> Unit, jogarNovamente: () 
         Text("Vencedor: ${s.vencedor?.nome ?: "Partida não concluída"}", style = MaterialTheme.typography.headlineSmall)
         Text("Rodadas: ${s.rodada}")
         Text("Pontuação da partida:")
-        s.jogadores.sortedByDescending { it.acertos }.forEach { j ->
-            Text("${j.nome} • ${j.acertos} acertos • ${j.acertos * 10} pontos")
+        s.jogadores.sortedByDescending { it.pontos }.forEach { j ->
+            Text("${j.nome} • ${j.acertos} acertos • ${j.pontos} pontos")
         }
+        s.envioOnline?.let { Text(it, color = MaterialTheme.colorScheme.primary) }
         Button(onClick = verRanking, modifier = Modifier.fillMaxWidth()) { Text("VER RANKING") }
         OutlinedButton(onClick = jogarNovamente, modifier = Modifier.fillMaxWidth()) { Text("JOGAR NOVAMENTE") }
     }

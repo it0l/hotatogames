@@ -1,13 +1,80 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    match /questoes/{questaoId} {
-      allow read: if true;
-      allow create, update, delete: if request.auth != null &&
+    function ehAdmin() {
+      return request.auth != null &&
         exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
+
+    // Limite generoso de pontos por partida, só para barrar valores absurdos.
+    function pontosValidos(p) {
+      return p is int && p >= 0 && p <= 200000;
+    }
+
+    function nomeValido(n) {
+      return n is string && n.size() > 0 && n.size() <= 30;
+    }
+
+    function dificuldadeValida(d) {
+      return d in ['Fácil', 'Médio', 'Difícil'];
+    }
+
+    match /questoes/{questaoId} {
+      allow read: if true;
+      allow create, update, delete: if ehAdmin();
+    }
+
     match /admins/{uid} {
       allow read, write: if false;
+    }
+
+    // Histórico: qualquer jogador (login anônimo) cria; só admin altera ou apaga.
+    match /partidas/{partidaId} {
+      allow read: if true;
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['uid', 'criadaEm', 'dificuldade', 'duracao', 'rodadas', 'vencedor', 'jogadores']) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.criadaEm == request.time &&
+        dificuldadeValida(request.resource.data.dificuldade) &&
+        request.resource.data.duracao is int &&
+        request.resource.data.rodadas is int && request.resource.data.rodadas >= 1 &&
+        nomeValido(request.resource.data.vencedor) &&
+        request.resource.data.jogadores is list &&
+        request.resource.data.jogadores.size() >= 2 &&
+        request.resource.data.jogadores.size() <= 6;
+      allow update, delete: if ehAdmin();
+    }
+
+    // Tabela de high score: uma linha por jogador por partida.
+    match /recordes/{recordeId} {
+      allow read: if true;
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['nome', 'chave', 'pontos', 'dificuldade', 'partidaId', 'criadoEm']) &&
+        nomeValido(request.resource.data.nome) &&
+        request.resource.data.chave is string &&
+        pontosValidos(request.resource.data.pontos) &&
+        dificuldadeValida(request.resource.data.dificuldade) &&
+        request.resource.data.partidaId is string &&
+        request.resource.data.criadoEm == request.time;
+      allow update, delete: if ehAdmin();
+    }
+
+    // Totais por nome. Cada gravação soma exatamente uma partida.
+    match /jogadores/{chave} {
+      allow read: if true;
+      allow create: if request.auth != null &&
+        request.resource.data.keys().hasOnly(['nome', 'pontos', 'vitorias', 'partidas', 'atualizadoEm']) &&
+        nomeValido(request.resource.data.nome) &&
+        pontosValidos(request.resource.data.pontos) &&
+        request.resource.data.vitorias in [0, 1] &&
+        request.resource.data.partidas == 1;
+      allow update: if ehAdmin() || (request.auth != null &&
+        request.resource.data.keys().hasOnly(['nome', 'pontos', 'vitorias', 'partidas', 'atualizadoEm']) &&
+        nomeValido(request.resource.data.nome) &&
+        request.resource.data.partidas == resource.data.partidas + 1 &&
+        request.resource.data.vitorias - resource.data.vitorias in [0, 1] &&
+        pontosValidos(request.resource.data.pontos - resource.data.pontos));
+      allow delete: if ehAdmin();
     }
   }
 }
