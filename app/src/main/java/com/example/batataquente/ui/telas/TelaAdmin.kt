@@ -68,7 +68,7 @@ fun TelaAdmin(vm: AdminViewModel, voltar: () -> Unit) {
                 }
             }
         }
-        items(vm.questoesFiltradas, key = { "questao_${it.id}" }) { q ->
+        items(s.questoesFiltradas, key = { "questao_${it.id}" }) { q ->
             Card(modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
                     Text("${q.pergunta} = ${q.resposta}", style = MaterialTheme.typography.titleMedium)

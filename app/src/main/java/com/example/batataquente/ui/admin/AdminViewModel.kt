@@ -17,7 +17,13 @@ data class AdminState(
     val questoes: List<QuestaoEntity> = emptyList(),
     val filtro: String = "Todas",
     val mensagem: String? = null
-)
+) {
+    /** Derivada do próprio estado: muda junto com a lista e o filtro, então a tela sempre redesenha. */
+    val questoesFiltradas: List<QuestaoEntity>
+        get() = questoes
+            .filter { filtro == "Todas" || it.dificuldade == filtro }
+            .sortedBy { it.pergunta }
+}
 
 class AdminViewModel(private val repository: QuestaoRepository) : ViewModel() {
     private val _state = MutableStateFlow(AdminState())
@@ -86,11 +92,6 @@ class AdminViewModel(private val repository: QuestaoRepository) : ViewModel() {
                 onFailure = { erro -> "Falha de sincronização: ${erro.localizedMessage}. O jogo continua offline." }
             )) }
     }
-
-    val questoesFiltradas: List<QuestaoEntity>
-        get() = _state.value.questoes
-            .filter { _state.value.filtro == "Todas" || it.dificuldade == _state.value.filtro }
-            .sortedBy { it.pergunta }
 }
 
 class AdminViewModelFactory(private val repository: QuestaoRepository) : ViewModelProvider.Factory {
